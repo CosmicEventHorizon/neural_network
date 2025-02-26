@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define N 2 // number of pixels / parameters
-#define M 4 // number of images
+#define N 2 // number of inputs/ pixels
+#define M 4 // number of layers excluding the input layer
 
 // transpose a given matrix of dimensions RxC
 // Paremeters: flattened pointer to input matrix, R, C, flattened pointer to output matrix
@@ -33,46 +34,78 @@ void pivotingAlgorithm(double *, double *, int);
 // Paremeters: flattened pointer to A, flattened pointer to B, R, flattened pointer to X
 void backwardSubstitutionAlgorithm(double *, double *, int, double *);
 
+// build a neural network model of M layers, with Ni neurons in each layer i
+// Paremeters: flattened pointer to pointer array to store layers, pointer to no_neurons which will be
+// a parallel array to the pointer array for layers and each i position will dictate the number of neurons
+// in the corresponding layer
+void buildModel(double **, int *);
+
 // general equations:
-// normal equation
-// A(T) * A * THETA = A(T) * Y
 // memory address of element ij of flattened matrix M with C columns and memory p
 // p = p + i * C + j
-// element a(ij) of matrix C = A*B, where A and B have K columns and rows respectively
+// multiplication: element a(ij) of matrix C = A*B, where A and B have K columns and rows respectively
 // a(ij) = sigma(a(ik)*b(kj), k=K)
-// backward substitution
-// xi = (bi-sigma(j=i+1,n)(A(i,j)*x(j)))/cii  i=n-1,n-2...1
 
 int main()
 {
     // parameters to modify
-    double A[M][N] = {{1, -2}, {1, -1}, {1, 1}, {1, 2}};
-    double Y[M][1] = {-3, -2, 1, 2};
+    double X[N + 1][1] = {1, 2, 3};              // input array
+    int no_neurons[M][1] = {{2}, {3}, {2}, {4}}; // array containing the number of neurons in each layer
+    int u = 2;                                   // learning rate
 
     // algorithm parameters
-    double At[N][M];
-    transposeMatrix((double *)A, M, N, (double *)At);
+    double *layers[M][1];
+    srand(time(NULL));
+    buildModel((double **)layers, (int *)no_neurons);
 
-    // algorithm
-    //  P1=A(T)*A
-    //  P2=A(T)*Y
-    double P1[N][N];
-    multiplyMatrix((double *)At, (double *)A, N, M, N, (double *)P1);
-    double P2[N][1];
-    multiplyMatrix((double *)At, (double *)Y, N, M, 1, (double *)P2);
-    // P1*X=P2*Y
-    gaussianAlgorithm((double *)P1, (double *)P2, N);
-    double THETA[N][1];
-    backwardSubstitutionAlgorithm((double *)P1, (double *)P2, N, (double *)THETA);
-    printMatrix((double *)THETA, N, 1);
-
-    // predict
-    double X[1][N] = {{1, 1.5}};
-    double Yp[1][1] = {};
-    multiplyMatrix((double *)X, (double *)THETA, 1, N, 1, (double *)Yp);
-    printMatrix((double *)Yp, 1, 1);
+    for (int i = 0; i < M; i++)
+    {
+        printf("Layer %d:\n\n", i+1);
+        double *sub_vector;
+        for (int j = 0; j < no_neurons[i][0]; j++)
+        {
+            if (i == 0)
+            {
+                sub_vector = layers[i][0] + j * no_neurons[i][0];
+                printf("Neuron %d:\n", j+1);
+                printMatrix((double *)sub_vector, 1, no_neurons[i][0]);
+            }
+            else
+            {
+                sub_vector = layers[i][0] + j * no_neurons[i-1][0];
+                printf("Neuron %d:\n", j+1);
+                printMatrix((double *)sub_vector, 1, no_neurons[i-1][0]);
+            }
+        }
+    }
 
     return 0;
+}
+
+void buildModel(double **layers, int *no_neurons)
+{
+    double **layers_i;
+    for (int i = 0; i < M; i++)
+    {
+        int no_parameters;
+        if (i == 0) // if first layer then the number of parameters in layer = number of neurons * number of inputs
+        {
+            no_parameters = (*(no_neurons)) * N;
+        }
+        else
+        { // number of parameters in layer = number of neurons * number of neurons in previous layer
+            no_parameters = (*(no_neurons + i)) * (*(no_neurons + i - 1));
+        }
+        layers_i = layers + i;
+        // each layer will be a size of number of neurons * number of parameters
+        *layers_i = (double *)malloc(no_parameters * sizeof(double));
+        // initialize weight parameters
+        for (int j = 0; j < no_parameters; j++)
+        {
+            double *layers_j = *layers_i + j;
+            *layers_j = rand() % 20;
+        }
+    }
 }
 
 void transposeMatrix(double *matrix, int R, int C, double *matrix_transpose)
