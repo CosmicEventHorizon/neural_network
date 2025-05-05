@@ -1,5 +1,10 @@
-# Artifical Neural Network
-This repository contains an implementation of an artificial neural network written in C with standard libraries.
+# NumericalAlgorithms  
+Implementations of core numerical methods and a barebones neural network. 
 
-# Usage
-To be done
+### Features  
+- **MATLAB**: Root Finding algorithms, Regression & Interpolation algorithms, Numerical Integration algorithmsm, IVP solvers and Error analysis programs.  
+- **Pure C ANN**: From-scratch neural net with forward propagation, backpropagation and activation functions (no external deps).  
+
+### Goals  
+- Demonstrate low-level understanding of numerical linear algebra and machine learning fundamentals.  
+- Provide clean, reusable reference implementations.  
